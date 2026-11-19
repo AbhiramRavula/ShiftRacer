@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3d419a5b57f92941a2deaf48445f91c, type: 3}
+  m_Name: DefaultRaceConfig
+  m_EditorClassIdentifier: 
+  quarterMileDistance: 402.336
+  idleRpm: 2800
+  redlineRpm: 13000
+  perfectWindowMin: 11400
+  perfectWindowMax: 12600
+  rpmClimbRate: 7200
+  rpmFallRate: 5000
+  limiterFrequency: 18
+  gearTopSpeedsKmh:
+  - 135
+  - 178
+  - 220
+  - 258
+  - 292
+  - 325
+  gearShiftRpmDrops:
+  - 8600
+  - 9300
+  - 9900
+  - 10400
+  - 10800
+  perfectDriveEfficiency: 1
+  earlyShiftDriveEfficiency: 0.85
+  lateShiftDriveEfficiency: 0.72
+  opponentTargetSpeed: 42
+  opponentAcceleration: 13.5
