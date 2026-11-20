@@ -40,8 +40,29 @@ namespace Redline.Audio
         private bool _isShiftCutActive;
         private float _shiftCutTimer;
 
+        public void SetConfig(RaceConfig newConfig) => config = newConfig;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (config == null)
+            {
+                config = RaceConfig.GetDefaultConfig();
+                if (config != null) UnityEditor.EditorUtility.SetDirty(this);
+            }
+            if (engine == null) engine = GetComponent<BikeEngineModel>();
+            if (gearbox == null) gearbox = GetComponent<SequentialGearbox>();
+            if (session == null) session = GetComponent<RaceSessionController>();
+        }
+#endif
+
         private void Awake()
         {
+            if (config == null) config = RaceConfig.GetDefaultConfig();
+            if (engine == null) engine = GetComponent<BikeEngineModel>();
+            if (gearbox == null) gearbox = GetComponent<SequentialGearbox>();
+            if (session == null) session = GetComponent<RaceSessionController>();
+
             _sampleRate = AudioSettings.outputSampleRate > 0 ? AudioSettings.outputSampleRate : 48000f;
 
             _engineSource = GetComponent<AudioSource>();

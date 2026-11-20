@@ -13,6 +13,25 @@ namespace Redline.Core
 
         public void SetConfig(RaceConfig newConfig) => config = newConfig;
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (config == null)
+            {
+                config = RaceConfig.GetDefaultConfig();
+                if (config != null) UnityEditor.EditorUtility.SetDirty(this);
+            }
+        }
+#endif
+
+        private void Awake()
+        {
+            if (config == null)
+            {
+                config = RaceConfig.GetDefaultConfig();
+            }
+        }
+
         public void ResetOpponent()
         {
             DistanceTraveled = 0f;

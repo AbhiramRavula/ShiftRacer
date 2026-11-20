@@ -13,6 +13,9 @@ MonoBehaviour:
   m_Name: DefaultRaceConfig
   m_EditorClassIdentifier: 
   quarterMileDistance: 402.336
+  halfMileDistance: 804.672
+  oneMileDistance: 1609.344
+  raceFinishDistance: 402.336
   idleRpm: 2800
   redlineRpm: 13000
   perfectWindowMin: 11400
@@ -36,5 +39,5 @@ MonoBehaviour:
   perfectDriveEfficiency: 1
   earlyShiftDriveEfficiency: 0.85
   lateShiftDriveEfficiency: 0.72
-  opponentTargetSpeed: 42
-  opponentAcceleration: 13.5
+  opponentTargetSpeed: 70
+  opponentAcceleration: 17.5

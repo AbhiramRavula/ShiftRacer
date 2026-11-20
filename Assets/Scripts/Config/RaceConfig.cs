@@ -8,6 +8,12 @@ namespace Redline.Config
         [Header("Track Configuration")]
         [Tooltip("Standard quarter-mile distance in meters")]
         public float quarterMileDistance = 402.336f;
+        [Tooltip("Half-mile distance in meters")]
+        public float halfMileDistance = 804.672f;
+        [Tooltip("One-mile distance in meters")]
+        public float oneMileDistance = 1609.344f;
+        [Tooltip("Target race finish distance (default: quarter mile)")]
+        public float raceFinishDistance = 402.336f;
 
         [Header("Engine Limits")]
         public float idleRpm = 2800f;
@@ -35,8 +41,27 @@ namespace Redline.Config
         public float lateShiftDriveEfficiency = 0.72f;
 
         [Header("Opponent Baseline")]
-        [Tooltip("Opponent baseline target speed in m/s (42 m/s is ~151.2 km/h average)")]
-        public float opponentTargetSpeed = 42f;
-        public float opponentAcceleration = 13.5f;
+        [Tooltip("Opponent baseline target speed in m/s (72 m/s is ~260 km/h)")]
+        public float opponentTargetSpeed = 72f;
+        public float opponentAcceleration = 18f;
+
+        public static RaceConfig GetDefaultConfig()
+        {
+#if UNITY_EDITOR
+            var cfg = UnityEditor.AssetDatabase.LoadAssetAtPath<RaceConfig>("Assets/DefaultRaceConfig.asset");
+            if (cfg != null) return cfg;
+            cfg = UnityEditor.AssetDatabase.LoadAssetAtPath<RaceConfig>("Assets/ScriptableObjects/DefaultRaceConfig.asset");
+            if (cfg != null) return cfg;
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:RaceConfig");
+            if (guids.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<RaceConfig>(path);
+            }
+#endif
+            var all = Resources.FindObjectsOfTypeAll<RaceConfig>();
+            if (all != null && all.Length > 0) return all[0];
+            return null;
+        }
     }
 }
