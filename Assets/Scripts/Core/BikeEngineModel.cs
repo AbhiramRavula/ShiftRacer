@@ -37,26 +37,6 @@ namespace Redline.Core
             }
         }
 
-        private void Awake()
-        {
-            if (config == null)
-            {
-#if UNITY_EDITOR
-                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:RaceConfig");
-                if (guids.Length > 0)
-                {
-                    string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
-                    config = UnityEditor.AssetDatabase.LoadAssetAtPath<RaceConfig>(path);
-                }
-#endif
-                if (config == null)
-                {
-                    var allConfigs = Resources.FindObjectsOfTypeAll<RaceConfig>();
-                    if (allConfigs != null && allConfigs.Length > 0) config = allConfigs[0];
-                }
-            }
-        }
-
         public void Initialize()
         {
             CurrentGear = 1;
