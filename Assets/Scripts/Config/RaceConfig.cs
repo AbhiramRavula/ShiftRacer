@@ -2,6 +2,13 @@ using UnityEngine;
 
 namespace Redline.Config
 {
+    public enum RaceDistanceMode
+    {
+        QuarterMile, // 402.336m
+        HalfMile,    // 804.672m
+        FullMile     // 1609.344m
+    }
+
     [CreateAssetMenu(fileName = "RaceConfig", menuName = "Redline/Race Config")]
     public class RaceConfig : ScriptableObject
     {
@@ -14,6 +21,16 @@ namespace Redline.Config
         public float oneMileDistance = 1609.344f;
         [Tooltip("Target race finish distance (default: quarter mile)")]
         public float raceFinishDistance = 402.336f;
+
+        public float GetDistanceForMode(RaceDistanceMode mode)
+        {
+            switch (mode)
+            {
+                case RaceDistanceMode.HalfMile: return halfMileDistance;
+                case RaceDistanceMode.FullMile: return oneMileDistance;
+                default: return quarterMileDistance;
+            }
+        }
 
         [Header("Engine Limits")]
         public float idleRpm = 2800f;
@@ -40,10 +57,15 @@ namespace Redline.Config
         public float earlyShiftDriveEfficiency = 0.85f;
         public float lateShiftDriveEfficiency = 0.72f;
 
+        [Header("Control Scheme - Game Off 2026 One-Button Mode")]
+        [Tooltip("When true, the superbike applies full wide-open throttle automatically during the race, making the game a pure one-button experience where the SHIFT key is your only control!")]
+        public bool autoThrottleDuringRace = true;
+
         [Header("Opponent Baseline")]
-        [Tooltip("Opponent baseline target speed in m/s (72 m/s is ~260 km/h)")]
-        public float opponentTargetSpeed = 72f;
-        public float opponentAcceleration = 18f;
+        [Tooltip("Opponent baseline target speed in m/s (66 m/s is ~238 km/h for a 10.1s quarter-mile)")]
+        public float opponentTargetSpeed = 66f;
+        [Tooltip("Opponent acceleration in m/s^2 (8.2 m/s^2 gives a competitive ~10.1s quarter-mile)")]
+        public float opponentAcceleration = 8.2f;
 
         public static RaceConfig GetDefaultConfig()
         {

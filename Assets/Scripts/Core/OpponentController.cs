@@ -49,12 +49,38 @@ namespace Redline.Core
             IsRacing = false;
         }
 
-        public void UpdateOpponent(float deltaTime)
+        public void UpdateOpponent(float deltaTime, float targetRaceDistance = 402.336f)
         {
             if (!IsRacing || config == null) return;
 
+            float targetSpeed = config.opponentTargetSpeed;
+            float accel = config.opponentAcceleration;
+
+            // Dynamically extend for 1/2 Mile or 1 Mile strips so longer races remain competitive
+            if (targetRaceDistance > 1200f) // 1 Mile
+            {
+                if (DistanceTraveled > 800f)
+                {
+                    targetSpeed = 85f; // ~306 km/h
+                    accel = 3.8f;      // 6th gear top end pull
+                }
+                else if (DistanceTraveled > 400f)
+                {
+                    targetSpeed = 77f; // ~277 km/h
+                    accel = 5.2f;      // 5th gear pull
+                }
+            }
+            else if (targetRaceDistance > 600f) // 1/2 Mile
+            {
+                if (DistanceTraveled > 380f)
+                {
+                    targetSpeed = 76f; // ~274 km/h
+                    accel = 5.0f;
+                }
+            }
+
             // Smooth deterministic acceleration to target speed
-            CurrentSpeedMs = Mathf.MoveTowards(CurrentSpeedMs, config.opponentTargetSpeed, config.opponentAcceleration * deltaTime);
+            CurrentSpeedMs = Mathf.MoveTowards(CurrentSpeedMs, targetSpeed, accel * deltaTime);
             DistanceTraveled += CurrentSpeedMs * deltaTime;
         }
     }

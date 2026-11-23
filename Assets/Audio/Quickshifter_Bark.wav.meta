@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d9597e803d8745cfb97ce7b4517ad7ff
+AudioImporter:
+  defaultBitsPerSample: 16
+  outputSampleRate: 44100
+  serializedVersion: 6
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  ambisonic: 0
+  3D: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

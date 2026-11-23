@@ -10,6 +10,9 @@ namespace Redline.Core
         [SerializeField] private BikeEngineModel engine;
         [SerializeField] private ShiftJudge judge;
 
+        private float _lastShiftTime = -1f;
+        private const float MIN_SHIFT_INTERVAL = 0.22f; // Minimum 220ms cooldown between shifts to prevent double-tap triggers
+
         public event Action<int, ShiftGrade> OnUpshifted; // newGear, grade
 
         public void SetConfig(RaceConfig newConfig) => config = newConfig;
@@ -58,6 +61,11 @@ namespace Redline.Core
 
         public void HandleUpshift()
         {
+            if (Time.time - _lastShiftTime < MIN_SHIFT_INTERVAL)
+            {
+                return; // Ignore duplicate input within cooldown window
+            }
+
             if (engine == null) engine = GetComponent<BikeEngineModel>();
             if (judge == null) judge = GetComponent<ShiftJudge>();
 
@@ -73,6 +81,8 @@ namespace Redline.Core
                 return;
             }
 
+            _lastShiftTime = Time.time;
+
             float shiftRpm = engine.CurrentRpm;
             int currentGear = engine.CurrentGear;
 
@@ -82,7 +92,7 @@ namespace Redline.Core
             switch (grade)
             {
                 case ShiftGrade.Perfect:
-                    engine.CurrentDriveEfficiency = config.perfectDriveEfficiency;
+                    engine.CurrentDriveEfficiency = Mathf.Max(1.05f, config.perfectDriveEfficiency);
                     break;
                 case ShiftGrade.Early:
                     engine.CurrentDriveEfficiency = config.earlyShiftDriveEfficiency;
@@ -93,23 +103,23 @@ namespace Redline.Core
             }
 
             int nextGear = currentGear + 1;
-            int dropIndex = Mathf.Clamp(currentGear - 1, 0, config.gearShiftRpmDrops.Length - 1);
-            float postShiftRpm = config.gearShiftRpmDrops[dropIndex];
-
-            engine.ApplyShift(nextGear, postShiftRpm);
-            Debug.Log($"<color=#00FF66><b>[Redline Gearbox] Upshifted: Gear {currentGear} -> {nextGear}! RPM dropped to {postShiftRpm}. Grade: {grade}</b></color>");
+            engine.ApplyShift(nextGear);
+            Debug.Log($"<color=#00FF66><b>[Redline Gearbox] Upshifted: Gear {currentGear} -> {nextGear}! RPM: {engine.CurrentRpm:F0} at {engine.CurrentSpeedKmh:F1} km/h. Grade: {grade}</b></color>");
             OnUpshifted?.Invoke(nextGear, grade);
         }
 
         public void HandleDownshift()
         {
+            if (Time.time - _lastShiftTime < MIN_SHIFT_INTERVAL) return;
+
             if (engine == null) engine = GetComponent<BikeEngineModel>();
             if (engine == null || config == null || engine.CurrentGear <= 1) return;
 
+            _lastShiftTime = Time.time;
+
             int prevGear = engine.CurrentGear - 1;
-            float bumpedRpm = Mathf.Min(engine.CurrentRpm + 2500f, config.redlineRpm);
-            engine.ApplyShift(prevGear, bumpedRpm);
-            Debug.Log($"[Redline Gearbox] Downshifted to Gear {prevGear}");
+            engine.ApplyShift(prevGear);
+            Debug.Log($"[Redline Gearbox] Downshifted to Gear {prevGear}! RPM: {engine.CurrentRpm:F0} at {engine.CurrentSpeedKmh:F1} km/h");
         }
     }
 }
