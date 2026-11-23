@@ -36,6 +36,7 @@ namespace Redline.Core
 
         private const float StagingDuration = 3.0f;
         private bool _initialized;
+        private float _readyLockoutTimer;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -165,7 +166,7 @@ namespace Redline.Core
             bool screenTapStart = (mouseLeftPressed || touchPressed) && !isPointerOverUI;
 
             bool throttleHeld = spaceHeld || wHeld || mouseLeftHeld || gamepadThrottle || mobileThrottle;
-            bool startAction = spacePressed || shiftPressed || wHeld || gamepadStart || mobileStart || screenTapStart;
+            bool startAction = spacePressed || shiftPressed || gamepadStart || mobileStart;
             bool upshiftAction = shiftPressed || ePressed || mouseRightPressed || gamepadShift || mobileUpshift;
             bool downshiftAction = qPressed || mobileDownshift;
 
@@ -173,6 +174,12 @@ namespace Redline.Core
             switch (State)
             {
                 case RaceState.Ready:
+                    if (_readyLockoutTimer > 0f)
+                    {
+                        _readyLockoutTimer -= Time.deltaTime;
+                        break; // Locked out during return transition so Result taps cannot stage
+                    }
+
                     if (cycleDistanceAction)
                     {
                         CycleDistanceMode();
@@ -240,12 +247,12 @@ namespace Redline.Core
                     break;
 
                 case RaceState.Result:
-                    bool resultScreenTap = mouseLeftPressed || touchPressed || mobileStart;
+                    bool resultTap = mouseLeftPressed || touchPressed || rPressed;
                     if (cycleDistanceAction)
                     {
                         CycleDistanceMode();
                     }
-                    else if (startAction || rPressed || resultScreenTap)
+                    else if (spacePressed || shiftPressed || resultTap)
                     {
                         ResetToReady();
                     }
@@ -258,6 +265,12 @@ namespace Redline.Core
             ElapsedRaceTime = 0f;
             PlayerWon = false;
             ResultSummary = "";
+            _readyLockoutTimer = 0.45f; // Debounce lockout so tapping Result screen returns to menu without replaying
+
+            if (Redline.UI.MobileTouchController.Instance != null)
+            {
+                Redline.UI.MobileTouchController.Instance.ConsumeStart(); // Clear any pending start triggers
+            }
 
             if (playerEngine != null) playerEngine.Initialize();
             if (judge != null) judge.ResetJudge();

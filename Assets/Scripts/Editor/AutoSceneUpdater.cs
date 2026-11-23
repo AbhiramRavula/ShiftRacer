@@ -12,13 +12,15 @@ namespace Redline.EditorTools
         static AutoSceneUpdater()
         {
             EditorApplication.delayCall += UpdateUILayoutInScene;
-            EditorApplication.delayCall += UpdateAppIcon;
+            EditorApplication.delayCall += ApplyAppIconAndLogos;
         }
 
-        private static void UpdateAppIcon()
+        public static void ApplyAppIconAndLogos()
         {
-            var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Sprites/App_icon.png");
-            if (icon != null)
+            var iconTex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Sprites/App_icon.png");
+            var iconSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/App_icon.png");
+
+            if (iconTex != null)
             {
                 var unknownTarget = UnityEditor.Build.NamedBuildTarget.Unknown;
                 var standaloneTarget = UnityEditor.Build.NamedBuildTarget.Standalone;
@@ -26,14 +28,24 @@ namespace Redline.EditorTools
                 var androidTarget = UnityEditor.Build.NamedBuildTarget.Android;
                 var iosTarget = UnityEditor.Build.NamedBuildTarget.iOS;
 
-                var icons = new Texture2D[] { icon };
+                var icons = new Texture2D[] { iconTex };
                 PlayerSettings.SetIcons(unknownTarget, icons, IconKind.Application);
                 PlayerSettings.SetIcons(standaloneTarget, icons, IconKind.Application);
                 PlayerSettings.SetIcons(webglTarget, icons, IconKind.Application);
                 PlayerSettings.SetIcons(androidTarget, icons, IconKind.Application);
                 PlayerSettings.SetIcons(iosTarget, icons, IconKind.Application);
 
-                Debug.Log("<color=#00FF66><b>[Redline] App_icon.png assigned as Game Application Icon across all platforms!</b></color>");
+                if (iconSprite != null)
+                {
+                    try
+                    {
+                        var splashLogo = PlayerSettings.SplashScreenLogo.Create(2.5f, iconSprite);
+                        PlayerSettings.SplashScreen.logos = new PlayerSettings.SplashScreenLogo[] { splashLogo };
+                    }
+                    catch { }
+                }
+
+                Debug.Log("<color=#00FF66><b>[Redline] App_icon.png locked as Game Application Icon & Logo across all build targets!</b></color>");
             }
         }
 
@@ -51,6 +63,20 @@ namespace Redline.EditorTools
                     Debug.Log("<color=#00FF66><b>[Redline] Scene UI layout cleanly updated and saved!</b></color>");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Automatic pre-build processor: Ensures App_icon.png is strictly applied as the application
+    /// icon and splash logo before every single build (PC, WebGL, mobile).
+    /// </summary>
+    public class BuildIconEnforcer : UnityEditor.Build.IPreprocessBuildWithReport
+    {
+        public int callbackOrder => 0;
+
+        public void OnPreprocessBuild(UnityEditor.Build.Reporting.BuildReport report)
+        {
+            AutoSceneUpdater.ApplyAppIconAndLogos();
         }
     }
 }

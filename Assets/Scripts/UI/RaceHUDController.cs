@@ -96,6 +96,9 @@ namespace Redline.UI
 
         private Coroutine _calloutCoroutine;
         private Coroutine _goFlashCoroutine;
+        private Coroutine _badgePopCoroutine;
+        private bool _wasPromptingShift;
+        private OnScreenTouchButton _upshiftTouchBtn;
         private int _lastDisplayedCountdown = -1;
 
 #if UNITY_EDITOR
@@ -908,6 +911,11 @@ namespace Redline.UI
                     var touchBtn = stageBtnGo.GetComponent<OnScreenTouchButton>();
                     touchBtn.SetButtonType(TouchButtonType.AnyScreenTap);
 
+                    var sBtn = stageBtnGo.GetComponent<Button>();
+                    if (sBtn == null) sBtn = stageBtnGo.AddComponent<Button>();
+                    sBtn.onClick.RemoveAllListeners();
+                    sBtn.onClick.AddListener(() => session?.StartStaging());
+
                     GameObject textGo = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
                     textGo.transform.SetParent(stageBtnGo.transform, false);
                     RectTransform trt = textGo.GetComponent<RectTransform>();
@@ -940,6 +948,11 @@ namespace Redline.UI
                         bimg.type = Image.Type.Sliced;
                     }
 
+                    var sBtn = existingStageBtn.GetComponent<Button>();
+                    if (sBtn == null) sBtn = existingStageBtn.gameObject.AddComponent<Button>();
+                    sBtn.onClick.RemoveAllListeners();
+                    sBtn.onClick.AddListener(() => session?.StartStaging());
+
                     var txt = existingStageBtn.GetComponentInChildren<TextMeshProUGUI>();
                     if (txt != null)
                     {
@@ -949,12 +962,19 @@ namespace Redline.UI
                 }
             }
 
-            if (resultOverlay != null && resultOverlay.GetComponent<OnScreenTouchButton>() == null)
+            if (resultOverlay != null)
             {
                 var img = resultOverlay.GetComponent<Image>();
                 if (img != null) img.raycastTarget = true;
-                var btn = resultOverlay.AddComponent<OnScreenTouchButton>();
-                btn.SetButtonType(TouchButtonType.AnyScreenTap);
+                
+                // Remove legacy touch button that was triggering _startTriggered
+                var touchBtn = resultOverlay.GetComponent<OnScreenTouchButton>();
+                if (touchBtn != null) Destroy(touchBtn);
+
+                var rBtn = resultOverlay.GetComponent<Button>();
+                if (rBtn == null) rBtn = resultOverlay.gameObject.AddComponent<Button>();
+                rBtn.onClick.RemoveAllListeners();
+                rBtn.onClick.AddListener(() => session?.ResetToReady());
             }
         }
 
@@ -1016,9 +1036,12 @@ namespace Redline.UI
             if (gearText != null) gearText.text = $"{engine.CurrentGear}";
 
             // REAL-TIME SHIFT PROMPT: Lights up when entering green window (11,400–12,600 RPM) or redline!
+            // In 6th (top) gear, there are no more gears to shift into, so we never prompt to shift!
+            int maxGears = (config != null && config.gearTopSpeedsKmh != null) ? config.gearTopSpeedsKmh.Length : 6;
+            bool canUpshift = engine.CurrentGear < maxGears;
             bool inGreenWindow = engine.CurrentRpm >= config.perfectWindowMin && engine.CurrentRpm <= config.perfectWindowMax;
             bool atRedline = engine.CurrentRpm > config.perfectWindowMax || engine.IsOnLimiter;
-            bool shouldPromptShift = (session != null && session.State == RaceState.Racing) && (inGreenWindow || atRedline);
+            bool shouldPromptShift = canUpshift && (session != null && session.State == RaceState.Racing) && (inGreenWindow || atRedline);
 
             if (limiterWarningCue != null)
             {
@@ -1040,19 +1063,26 @@ namespace Redline.UI
                 }
             }
 
-            // Real-time Shift Now Badge (shown during shift window if no grade callout is currently displaying)
-            if (_calloutCoroutine == null && badgeDisplayImage != null)
+            // Real-time Shift Now Badge & Button Pop (triggered during shift window)
+            if (shouldPromptShift && !_wasPromptingShift)
             {
-                if (shouldPromptShift && badgeShiftNowSprite != null)
+                if (_upshiftTouchBtn == null && mobileControlsRoot != null)
+                    _upshiftTouchBtn = mobileControlsRoot.transform.Find("Touch_Upshift_Button")?.GetComponent<OnScreenTouchButton>();
+                _upshiftTouchBtn?.PlayPopAnimation(1.22f, 0.32f);
+
+                if (badgeDisplayImage != null && badgeShiftNowSprite != null && _calloutCoroutine == null)
                 {
                     badgeDisplayImage.gameObject.SetActive(true);
                     badgeDisplayImage.sprite = badgeShiftNowSprite;
-                }
-                else
-                {
-                    badgeDisplayImage.gameObject.SetActive(false);
+                    if (_badgePopCoroutine != null) StopCoroutine(_badgePopCoroutine);
+                    _badgePopCoroutine = StartCoroutine(PopTransformRoutine(badgeDisplayImage.transform, 1.25f, 0.30f));
                 }
             }
+            else if (!shouldPromptShift && _calloutCoroutine == null && badgeDisplayImage != null && badgeDisplayImage.gameObject.activeSelf)
+            {
+                badgeDisplayImage.gameObject.SetActive(false);
+            }
+            _wasPromptingShift = shouldPromptShift;
 
             // Distance & Progress Bar (Respects Selected Distance: 1/4, 1/2, or Full Mile)
             float targetDist = session != null ? session.TargetRaceDistance : (config != null ? config.raceFinishDistance : 402.336f);
@@ -1178,6 +1208,14 @@ namespace Redline.UI
             {
                 UpdateOverlays(RaceState.Ready);
                 ShowReadyScreen();
+
+                // Initial attention-grabbing pops so player intuitively clicks/taps
+                if (_upshiftTouchBtn == null && mobileControlsRoot != null)
+                    _upshiftTouchBtn = mobileControlsRoot.transform.Find("Touch_Upshift_Button")?.GetComponent<OnScreenTouchButton>();
+                _upshiftTouchBtn?.PlayPopAnimation(1.24f, 0.45f);
+
+                var stageBtn = readyOverlay?.transform.Find("Stage_Prompt_Button")?.GetComponent<OnScreenTouchButton>();
+                stageBtn?.PlayPopAnimation(1.15f, 0.40f);
             }
             else if (newState == RaceState.Staging)
             {
@@ -1189,6 +1227,11 @@ namespace Redline.UI
             }
             else if (newState == RaceState.Racing)
             {
+                // Initial launch pop for the shift button
+                if (_upshiftTouchBtn == null && mobileControlsRoot != null)
+                    _upshiftTouchBtn = mobileControlsRoot.transform.Find("Touch_Upshift_Button")?.GetComponent<OnScreenTouchButton>();
+                _upshiftTouchBtn?.PlayPopAnimation(1.28f, 0.40f);
+
                 // Flash "GO!" before hiding staging overlay
                 if (stagingOverlay != null && stagingCountdownText != null)
                 {
@@ -1337,6 +1380,38 @@ namespace Redline.UI
                     }
                 }
             }
+        }
+
+        private IEnumerator PopTransformRoutine(Transform target, float punchScale, float duration)
+        {
+            if (target == null) yield break;
+            Vector3 baseScale = Vector3.one;
+            float elapsed = 0f;
+            float halfDuration = duration * 0.45f;
+            while (elapsed < halfDuration)
+            {
+                if (target == null) yield break;
+                float t = elapsed / halfDuration;
+                float s = Mathf.Sin(t * Mathf.PI * 0.5f);
+                target.localScale = Vector3.Lerp(baseScale * 0.7f, baseScale * punchScale, s);
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            elapsed = 0f;
+            float settleDuration = duration - halfDuration;
+            while (elapsed < settleDuration)
+            {
+                if (target == null) yield break;
+                float t = elapsed / settleDuration;
+                float bounce = Mathf.Cos(t * Mathf.PI * 1.5f) * (1f - t) * (punchScale - 1f) * 0.5f;
+                target.localScale = baseScale * (1f + bounce);
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if (target != null) target.localScale = baseScale;
+            _badgePopCoroutine = null;
         }
 
         private void UpdateOverlays(RaceState state)
