@@ -20,9 +20,9 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 100
   m_LinearFogEnd: 1400
-  m_AmbientSkyColor: {r: 0.03, g: 0.04, b: 0.09, a: 1}
-  m_AmbientEquatorColor: {r: 0.02, g: 0.025, b: 0.05, a: 1}
-  m_AmbientGroundColor: {r: 0.005, g: 0.005, b: 0.01, a: 1}
+  m_AmbientSkyColor: {r: 0.22, g: 0.25, b: 0.35, a: 1}
+  m_AmbientEquatorColor: {r: 0.16, g: 0.18, b: 0.24, a: 1}
+  m_AmbientGroundColor: {r: 0.1, g: 0.1, b: 0.12, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
@@ -4829,7 +4829,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 972279616}
-  - {fileID: 110249553}
   m_Father: {fileID: 1002480672}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &75200891
@@ -6728,11 +6727,11 @@ Transform:
   m_GameObject: {fileID: 110249552}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.65}
-  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
+  m_LocalPosition: {x: 0, y: 6.2, z: -0.45}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 75200890}
+  m_Father: {fileID: 1002480672}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!102 &110249554
 TextMesh:
@@ -6744,18 +6743,18 @@ TextMesh:
   m_GameObject: {fileID: 110249552}
   m_Text: 1/4 MILE - 402M
   m_OffsetZ: 0
-  m_CharacterSize: 1.6
+  m_CharacterSize: 0.22
   m_LineSpacing: 1
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 54
-  m_FontStyle: 0
+  m_FontSize: 64
+  m_FontStyle: 1
   m_RichText: 1
   m_Font: {fileID: 0}
   m_Color:
     serializedVersion: 2
-    rgba: 4278512639
+    rgba: 4294967295
 --- !u!23 &110249555
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -9099,8 +9098,8 @@ Transform:
   m_GameObject: {fileID: 160040259}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.05}
-  m_LocalScale: {x: 1.04, y: 1.1, z: 0.8}
+  m_LocalPosition: {x: 0, y: 0, z: 0.25}
+  m_LocalScale: {x: 1.06, y: 1.15, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1254884534}
@@ -9952,6 +9951,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _EMISSION
   - _SPECULAR_COLOR
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
@@ -19289,8 +19289,8 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.06999998, g: 0.06999998, b: 0.089999996, a: 1}
-    - _Color: {r: 0.06999995, g: 0.06999995, b: 0.08999997, a: 1}
+    - _BaseColor: {r: 0.14, g: 0.14, b: 0.17, a: 1}
+    - _Color: {r: 0.13999996, g: 0.13999996, b: 0.16999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999993, g: 0.19999993, b: 0.19999993, a: 0.05}
   m_BuildTextureStacks: []
@@ -29089,9 +29089,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1092189595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 163, y: -27.4135}
   m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &448023374
@@ -42610,8 +42610,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 11
   m_Type: 1
-  m_Color: {r: 0.55, g: 0.68, b: 0.95, a: 1}
-  m_Intensity: 1.2
+  m_Color: {r: 0.8, g: 0.85, b: 1, a: 1}
+  m_Intensity: 1.4
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -53266,11 +53266,11 @@ Transform:
   m_GameObject: {fileID: 826075577}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.65}
-  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
+  m_LocalPosition: {x: 0, y: 6.2, z: -0.45}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 987267213}
+  m_Father: {fileID: 1833279198}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!102 &826075579
 TextMesh:
@@ -53282,18 +53282,18 @@ TextMesh:
   m_GameObject: {fileID: 826075577}
   m_Text: 1/2 MILE - 804M
   m_OffsetZ: 0
-  m_CharacterSize: 1.6
+  m_CharacterSize: 0.22
   m_LineSpacing: 1
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 54
-  m_FontStyle: 0
+  m_FontSize: 64
+  m_FontStyle: 1
   m_RichText: 1
   m_Font: {fileID: 0}
   m_Color:
     serializedVersion: 2
-    rgba: 4294967040
+    rgba: 4294967295
 --- !u!23 &826075580
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -53459,6 +53459,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _EMISSION
   - _SPECULAR_COLOR
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
@@ -62302,8 +62303,8 @@ Transform:
   m_GameObject: {fileID: 972279615}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.05}
-  m_LocalScale: {x: 1.04, y: 1.1, z: 0.8}
+  m_LocalPosition: {x: 0, y: 0, z: 0.25}
+  m_LocalScale: {x: 1.06, y: 1.15, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 75200890}
@@ -63187,7 +63188,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1605982315}
-  - {fileID: 826075578}
   m_Father: {fileID: 1833279198}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &987267214
@@ -64096,6 +64096,7 @@ Transform:
   - {fileID: 737248107}
   - {fileID: 1887946843}
   - {fileID: 1637838910}
+  - {fileID: 110249553}
   m_Father: {fileID: 732708798}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1003531468
@@ -75477,6 +75478,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _EMISSION
   - _SPECULAR_COLOR
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
@@ -78871,7 +78873,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 160040260}
-  - {fileID: 1789049929}
   m_Father: {fileID: 2104510169}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &1254884535
@@ -80392,8 +80393,8 @@ Light:
   serializedVersion: 11
   m_Type: 0
   m_Color: {r: 0.92, g: 0.96, b: 1, a: 1}
-  m_Intensity: 28
-  m_Range: 100
+  m_Intensity: 22
+  m_Range: 75
   m_SpotAngle: 62
   m_InnerSpotAngle: 36
   m_CookieSize: 10
@@ -94172,6 +94173,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _EMISSION
   - _SPECULAR_COLOR
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
@@ -105212,9 +105214,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1092189595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 87, y: -27.4135}
   m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1590034425
@@ -106823,8 +106825,8 @@ Transform:
   m_GameObject: {fileID: 1605982314}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.05}
-  m_LocalScale: {x: 1.04, y: 1.1, z: 0.8}
+  m_LocalPosition: {x: 0, y: 0, z: 0.25}
+  m_LocalScale: {x: 1.06, y: 1.15, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 987267213}
@@ -117852,11 +117854,11 @@ Transform:
   m_GameObject: {fileID: 1789049928}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.65}
-  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
+  m_LocalPosition: {x: 0, y: 6.2, z: -0.45}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1254884534}
+  m_Father: {fileID: 2104510169}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!102 &1789049930
 TextMesh:
@@ -117868,18 +117870,18 @@ TextMesh:
   m_GameObject: {fileID: 1789049928}
   m_Text: 1 MILE FINISH - 1609M
   m_OffsetZ: 0
-  m_CharacterSize: 1.6
+  m_CharacterSize: 0.22
   m_LineSpacing: 1
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 54
-  m_FontStyle: 0
+  m_FontSize: 64
+  m_FontStyle: 1
   m_RichText: 1
   m_Font: {fileID: 0}
   m_Color:
     serializedVersion: 2
-    rgba: 4286585599
+    rgba: 4294967295
 --- !u!23 &1789049931
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -120360,6 +120362,7 @@ Transform:
   - {fileID: 1358179697}
   - {fileID: 180779498}
   - {fileID: 893521302}
+  - {fileID: 826075578}
   m_Father: {fileID: 732708798}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1834839264
@@ -120682,9 +120685,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1092189595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 201, y: -27.4135}
   m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1839024570
@@ -129825,6 +129828,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _EMISSION
   - _SPECULAR_COLOR
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
@@ -131632,9 +131636,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1092189595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 125, y: -27.4135}
   m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1989029919
@@ -134244,9 +134248,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1092189595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 49, y: -27.4135}
   m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2035267542
@@ -138989,6 +138993,7 @@ Transform:
   - {fileID: 245349244}
   - {fileID: 197490103}
   - {fileID: 564995043}
+  - {fileID: 1789049929}
   m_Father: {fileID: 732708798}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2105600656
@@ -139618,6 +139623,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _EMISSION
   - _SPECULAR_COLOR
   m_InvalidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF

@@ -402,15 +402,15 @@ namespace Redline.Core
                                DistanceMode == RaceDistanceMode.HalfMile ? "1/2 MILE" : "1 MILE";
 
             string bestTag = IsNewPersonalBest
-                ? "  •  <color=#FFE600><b>★ NEW BEST! ★</b></color>"
-                : (prevBestTime > 0f ? $"  •  <color=#9AA0A6>BEST {prevBestTime:F2}s</color>" : "");
+                ? "  |  <color=#FFE600><b>NEW BEST!</b></color>"
+                : (prevBestTime > 0f ? $"  |  <color=#9AA0A6>BEST {prevBestTime:F2}s</color>" : "");
 
             string shiftDisplay = totalShifts > 0 ? $"{cleanShifts}/{totalShifts}" : "0/0";
 
             if (crossedFirst)
             {
                 string timingTag = flawlessTiming ? "<color=#00FF66><b>FLAWLESS 100% TIMING</b></color>" : "<color=#00F0FF><b>CLEAN RUN</b></color>";
-                ResultSummary = $"<size=86%><color=#9AA0A6>{distLabel} FINISH</color>  •  {timingTag}{bestTag}</size>\n" +
+                ResultSummary = $"<size=86%><color=#9AA0A6>{distLabel} FINISH</color>  |  {timingTag}{bestTag}</size>\n" +
                                 $"<color=#9AA0A6>TIME</color>  <color=#00F0FF><b>{officialTime:F2}s</b></color>      <color=#555566>|</color>      " +
                                 $"<color=#9AA0A6>TRAP</color>  <color=#FFE600><b>{trapSpeedKmh:F0} KM/H</b></color>\n" +
                                 $"<color=#9AA0A6>CLEAN SHIFTS</color>  <color={(flawlessTiming ? "#00FF66" : "#FFFFFF")}><b>{shiftDisplay}</b></color>" +
@@ -419,7 +419,7 @@ namespace Redline.Core
             else
             {
                 float rivalLead = Mathf.Max(0.5f, opponentDist - playerDist);
-                ResultSummary = $"<size=86%><color=#FF6666>{distLabel} RUN</color>  •  <color=#9AA0A6>RIVAL LEAD +{rivalLead:F1} m</color>{bestTag}</size>\n" +
+                ResultSummary = $"<size=86%><color=#FF6666>{distLabel} RUN</color>  |  <color=#9AA0A6>RIVAL LEAD +{rivalLead:F1} m</color>{bestTag}</size>\n" +
                                 $"<color=#9AA0A6>TIME</color>  <color=#00F0FF><b>{officialTime:F2}s</b></color>      <color=#555566>|</color>      " +
                                 $"<color=#9AA0A6>TRAP</color>  <color=#FFE600><b>{trapSpeedKmh:F0} KM/H</b></color>\n" +
                                 $"<color=#9AA0A6>CLEAN SHIFTS</color>  <color=#FFFFFF><b>{shiftDisplay}</b></color>" +

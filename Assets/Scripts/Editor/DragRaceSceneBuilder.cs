@@ -724,7 +724,7 @@ namespace Redline.EditorTools
             readyGo.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.75f);
             readyGo.GetComponent<Image>().raycastTarget = false;
             CreateTMP(readyGo.transform, "Title", "SHIFTRACER", new Vector2(0.5f, 0.5f), new Vector2(0f, 225f), new Vector2(800f, 65f), 58, TextAlignmentOptions.Center, new Color(1f, 0.22f, 0.22f));
-            CreateTMP(readyGo.transform, "Subtitle", "REDLINE QUARTER MILE  •  GITHUB GAME OFF 2026", new Vector2(0.5f, 0.5f), new Vector2(0f, 178f), new Vector2(800f, 30f), 18, TextAlignmentOptions.Center, new Color(0.9f, 0.75f, 0.2f));
+            CreateTMP(readyGo.transform, "Subtitle", "REDLINE QUARTER MILE  |  GITHUB GAME OFF 2026", new Vector2(0.5f, 0.5f), new Vector2(0f, 178f), new Vector2(800f, 30f), 18, TextAlignmentOptions.Center, new Color(0.9f, 0.75f, 0.2f));
             CreateTMP(readyGo.transform, "Hint", "<color=#FFE600>WIDE-OPEN AUTO-THROTTLE ENGAGED</color>\nPRESS <color=#00F0FF><b>SHIFT KEY</b></color> OR <color=#00F0FF><b>TAP SCREEN</b></color> AT THE <color=#00FF66><b>GREEN ZONE</b></color> TO SHIFT GEARS", new Vector2(0.5f, 0.5f), new Vector2(0f, -25f), new Vector2(850f, 55f), 20, TextAlignmentOptions.Center, new Color(0.85f, 0.92f, 1f));
 
             // Staging Overlay

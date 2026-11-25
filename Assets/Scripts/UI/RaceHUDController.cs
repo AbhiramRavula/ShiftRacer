@@ -837,7 +837,7 @@ namespace Redline.UI
             if (txt == null) return;
 
             if (bestTime > 0f)
-                txt.text = $"<b>{title}</b>\n<size=60%>{meters} • <color=#00F0FF>BEST {bestTime:F2}s</color></size>";
+                txt.text = $"<b>{title}</b>\n<size=60%>{meters} | <color=#00F0FF>BEST {bestTime:F2}s</color></size>";
             else
                 txt.text = $"<b>{title}</b>\n<size=65%>{meters}</size>";
         }
@@ -1132,7 +1132,7 @@ namespace Redline.UI
             if (speedText != null) speedText.text = $"{Mathf.RoundToInt(engine.CurrentSpeedKmh)} <size=50%>KM/H</size>";
             if (gearText != null) gearText.text = $"{engine.CurrentGear}";
 
-            // REAL-TIME SHIFT PROMPT: Lights up when entering green window (11,400–12,600 RPM) or redline!
+            // REAL-TIME SHIFT PROMPT: Lights up when entering green window (11,400-12,600 RPM) or redline!
             // In 6th (top) gear or during finish rollout, there are no more gears to shift into, so we never prompt to shift!
             int maxGears = (config != null && config.gearTopSpeedsKmh != null) ? config.gearTopSpeedsKmh.Length : 6;
             bool canUpshift = engine.CurrentGear < maxGears;
@@ -1159,33 +1159,37 @@ namespace Redline.UI
                         bool inLaunchZone = engine.CurrentRpm >= RaceSessionController.PerfectLaunchMinRpm &&
                                             engine.CurrentRpm <= RaceSessionController.PerfectLaunchMaxRpm;
                         cueText.fontSize = 26f;
-                        cueText.text = inLaunchZone ? "★ LAUNCH ZONE READY! ★" : "REV 8K–10.8K RPM FOR HOLE-SHOT";
+                        cueText.text = inLaunchZone ? "LAUNCH ZONE READY!" : "REV 8K-10.8K RPM FOR HOLE-SHOT";
                         cueText.color = inLaunchZone ? new Color(0f, 1f, 0.45f) : new Color(1f, 0.78f, 0.2f);
                     }
                 }
                 else
                 {
-                    limiterWarningCue.SetActive(shouldPromptShift);
-                    var cueRt = limiterWarningCue.GetComponent<RectTransform>();
-                    if (cueRt != null)
+                    bool hasShiftSprite = badgeDisplayImage != null && badgeShiftNowSprite != null;
+                    limiterWarningCue.SetActive(shouldPromptShift && !hasShiftSprite);
+                    if (!hasShiftSprite)
                     {
-                        cueRt.anchoredPosition = new Vector2(0f, 125f);
-                        cueRt.sizeDelta = new Vector2(520f, 60f);
-                    }
-
-                    var cueText = limiterWarningCue.GetComponent<TextMeshProUGUI>();
-                    if (cueText != null)
-                    {
-                        cueText.fontSize = 44f;
-                        if (inGreenWindow)
+                        var cueRt = limiterWarningCue.GetComponent<RectTransform>();
+                        if (cueRt != null)
                         {
-                            cueText.text = ">> SHIFT NOW! <<";
-                            cueText.color = new Color(0f, 0.95f, 1f); // Glowing Cyan
+                            cueRt.anchoredPosition = new Vector2(0f, 125f);
+                            cueRt.sizeDelta = new Vector2(520f, 60f);
                         }
-                        else if (atRedline)
+
+                        var cueText = limiterWarningCue.GetComponent<TextMeshProUGUI>();
+                        if (cueText != null)
                         {
-                            cueText.text = "!! REDLINE - SHIFT !!";
-                            cueText.color = new Color(1f, 0.2f, 0.2f); // Flashing Red
+                            cueText.fontSize = 44f;
+                            if (inGreenWindow)
+                            {
+                                cueText.text = ">> SHIFT NOW! <<";
+                                cueText.color = new Color(0f, 0.95f, 1f); // Glowing Cyan
+                            }
+                            else if (atRedline)
+                            {
+                                cueText.text = "!! REDLINE - SHIFT !!";
+                                cueText.color = new Color(1f, 0.2f, 0.2f); // Flashing Red
+                            }
                         }
                     }
                 }
@@ -1289,7 +1293,7 @@ namespace Redline.UI
             if (shiftGradeCallout != null)
             {
                 shiftGradeCallout.gameObject.SetActive(true);
-                shiftGradeCallout.text = "★ HOLE-SHOT LAUNCH! ★";
+                shiftGradeCallout.text = "HOLE-SHOT LAUNCH!";
                 shiftGradeCallout.color = new Color(1f, 0.85f, 0.1f);
             }
 
@@ -1301,7 +1305,21 @@ namespace Redline.UI
 
         private IEnumerator ShowCalloutRoutine(ShiftGrade grade)
         {
-            if (shiftGradeCallout != null)
+            Sprite targetSprite = null;
+            if (badgeDisplayImage != null)
+            {
+                if (grade == ShiftGrade.Perfect && badgePerfectSprite != null) targetSprite = badgePerfectSprite;
+                else if (grade == ShiftGrade.Early && badgeEarlySprite != null) targetSprite = badgeEarlySprite;
+                else if (grade == ShiftGrade.Late && badgeLateSprite != null) targetSprite = badgeLateSprite;
+            }
+
+            if (targetSprite != null)
+            {
+                if (shiftGradeCallout != null) shiftGradeCallout.gameObject.SetActive(false);
+                badgeDisplayImage.gameObject.SetActive(true);
+                badgeDisplayImage.sprite = targetSprite;
+            }
+            else if (shiftGradeCallout != null)
             {
                 shiftGradeCallout.gameObject.SetActive(true);
                 switch (grade)
@@ -1318,21 +1336,6 @@ namespace Redline.UI
                         shiftGradeCallout.text = "LATE SHIFT";
                         shiftGradeCallout.color = new Color(1f, 0.2f, 0.2f);
                         break;
-                }
-            }
-
-            // Show sprite badge if assigned
-            if (badgeDisplayImage != null)
-            {
-                Sprite targetSprite = null;
-                if (grade == ShiftGrade.Perfect && badgePerfectSprite != null) targetSprite = badgePerfectSprite;
-                else if (grade == ShiftGrade.Early && badgeEarlySprite != null) targetSprite = badgeEarlySprite;
-                else if (grade == ShiftGrade.Late && badgeLateSprite != null) targetSprite = badgeLateSprite;
-
-                if (targetSprite != null)
-                {
-                    badgeDisplayImage.gameObject.SetActive(true);
-                    badgeDisplayImage.sprite = targetSprite;
                 }
             }
 
