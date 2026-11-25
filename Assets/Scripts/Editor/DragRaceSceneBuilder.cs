@@ -177,9 +177,10 @@ namespace Redline.EditorTools
             float trackTotalLength = 2200f; // over 1.3 miles
             float trackHalfLength = trackTotalLength * 0.5f;
 
-            // Midnight materials
+            // Midnight materials (matte asphalt to prevent specular headlight/lamp glare)
             Material asphaltMat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
             asphaltMat.color = new Color(0.07f, 0.07f, 0.09f); // Dark midnight asphalt
+            if (asphaltMat.HasProperty("_Smoothness")) asphaltMat.SetFloat("_Smoothness", 0.05f);
 
             Material whiteMat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
             whiteMat.color = new Color(0.92f, 0.92f, 0.96f);
@@ -190,11 +191,11 @@ namespace Redline.EditorTools
             Material metalMat = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
             metalMat.color = new Color(0.18f, 0.18f, 0.22f); // Dark industrial matte steel
 
-            // Glowing Neon Materials with HDR Intensity
-            Material neonYellow = CreateNeonMaterial("Neon_Yellow", new Color(1f, 0.92f, 0.05f), 3.5f);
-            Material neonCyan = CreateNeonMaterial("Neon_Cyan", new Color(0f, 0.95f, 1f), 3.5f);
-            Material neonMagenta = CreateNeonMaterial("Neon_Magenta", new Color(1f, 0.05f, 0.45f), 4.0f);
-            Material neonAmber = CreateNeonMaterial("Neon_Amber", new Color(1f, 0.72f, 0.2f), 3.5f);
+            // Balanced Neon Materials (crisp color without blinding white bloom)
+            Material neonYellow = CreateNeonMaterial("Neon_Yellow", new Color(1f, 0.92f, 0.05f), 1.15f);
+            Material neonCyan = CreateNeonMaterial("Neon_Cyan", new Color(0f, 0.95f, 1f), 1.15f);
+            Material neonMagenta = CreateNeonMaterial("Neon_Magenta", new Color(1f, 0.05f, 0.45f), 1.2f);
+            Material neonAmber = CreateNeonMaterial("Neon_Amber", new Color(1f, 0.72f, 0.2f), 1.05f);
 
             // 1. Asphalt Main Strip
             GameObject track = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -241,14 +242,13 @@ namespace Redline.EditorTools
                 rCurb.GetComponent<Renderer>().sharedMaterial = curbMat;
             }
 
-            // 4. Light Poles every 40m (with downward sodium spotlight every 80m)
+            // 4. Light Poles every 40m (clean visual poles without blinding spotlights)
             GameObject lightPolesRoot = new GameObject("Light_Poles");
             lightPolesRoot.transform.parent = envRoot.transform;
             for (float z = 20f; z < trackTotalLength; z += 40f)
             {
-                bool hasSpot = ((int)(z / 40f) % 2 == 0);
-                CreateLightPole(lightPolesRoot.transform, -6.8f, z, metalMat, neonAmber, isLeft: true, hasSpotlight: hasSpot);
-                CreateLightPole(lightPolesRoot.transform, 6.8f, z, metalMat, neonAmber, isLeft: false, hasSpotlight: hasSpot);
+                CreateLightPole(lightPolesRoot.transform, -6.8f, z, metalMat, neonAmber, isLeft: true, hasSpotlight: false);
+                CreateLightPole(lightPolesRoot.transform, 6.8f, z, metalMat, neonAmber, isLeft: false, hasSpotlight: false);
             }
 
             // 5. Distance Boards every 100m
@@ -273,41 +273,6 @@ namespace Redline.EditorTools
             // --- 1 MILE (1609.344m) - Cyber Neon Magenta / Red ---
             CreateMilestoneGantry(envRoot.transform, "Gantry_OneMile", config.oneMileDistance, 
                 "1 MILE FINISH - 1609M", metalMat, neonMagenta, new Color(1f, 0.1f, 0.5f));
-
-            // 7. Midnight Star Canopy overhead
-            CreateStarCanopy(envRoot.transform, trackTotalLength);
-        }
-
-        private static void CreateStarCanopy(Transform parent, float trackLength)
-        {
-            GameObject starsRoot = new GameObject("Midnight_Stars_Canopy");
-            starsRoot.transform.parent = parent;
-            starsRoot.transform.position = new Vector3(0f, 80f, trackLength * 0.5f);
-
-            var ps = starsRoot.AddComponent<ParticleSystem>();
-            var main = ps.main;
-            main.loop = true;
-            main.playOnAwake = true;
-            main.startLifetime = 9999f;
-            main.startSpeed = 0f;
-            main.startSize = 1.2f;
-            main.maxParticles = 2500;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startColor = new Color(0.92f, 0.95f, 1f, 0.95f);
-
-            var emission = ps.emission;
-            emission.rateOverTime = 0f;
-            emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, 2000) });
-
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(600f, 30f, trackLength + 400f);
-
-            var rend = starsRoot.GetComponent<ParticleSystemRenderer>();
-            rend.material = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit") ?? Shader.Find("Particles/Standard Unlit"))
-            {
-                color = new Color(1f, 1f, 1f, 0.95f)
-            };
         }
 
         private static void CreateMilestoneGantry(Transform parent, string name, float zPos, string labelText, Material gantryMat, Material neonMat, Color textColor)
@@ -367,27 +332,28 @@ namespace Redline.EditorTools
                 color = new Color(0.04f, 0.04f, 0.06f)
             };
 
-            // Neon Border around signboard
+            // Neon Border behind signboard so dark signboard stays in front as high-contrast backing
             GameObject signBorder = GameObject.CreatePrimitive(PrimitiveType.Cube);
             signBorder.name = "Sign_Neon_Border";
             signBorder.transform.parent = sign.transform;
-            signBorder.transform.localPosition = new Vector3(0f, 0f, -0.05f);
-            signBorder.transform.localScale = new Vector3(1.04f, 1.1f, 0.8f);
+            signBorder.transform.localPosition = new Vector3(0f, 0f, 0.25f);
+            signBorder.transform.localScale = new Vector3(1.06f, 1.15f, 0.8f);
             signBorder.GetComponent<Renderer>().sharedMaterial = neonMat;
 
-            // 3D Text Label
+            // 3D Text Label (parented to gantryRoot so it is NOT stretched by Sign_Board's non-uniform scale)
             GameObject textGo = new GameObject("Gantry_Label");
-            textGo.transform.parent = sign.transform;
-            textGo.transform.localPosition = new Vector3(0f, 0f, -0.65f);
+            textGo.transform.parent = gantryRoot.transform;
+            textGo.transform.localPosition = new Vector3(0f, 6.2f, -0.45f);
             textGo.transform.localRotation = Quaternion.identity;
-            textGo.transform.localScale = new Vector3(0.12f, 0.12f, 0.12f);
+            textGo.transform.localScale = Vector3.one;
             TextMesh tm = textGo.AddComponent<TextMesh>();
             tm.text = labelText;
-            tm.characterSize = 1.6f;
-            tm.fontSize = 54;
+            tm.characterSize = 0.22f;
+            tm.fontSize = 64;
+            tm.fontStyle = FontStyle.Bold;
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
-            tm.color = textColor;
+            tm.color = Color.white;
 
             // Gantry Spotlight pointing down at the finish line
             GameObject gantryLight = new GameObject("Gantry_Downlight");
@@ -460,7 +426,7 @@ namespace Redline.EditorTools
                 spot.spotAngle = 75f;
                 spot.innerSpotAngle = 40f;
                 spot.color = new Color(1f, 0.82f, 0.5f);
-                spot.intensity = 15f;
+                spot.intensity = 3.5f;
             }
         }
 
@@ -1108,17 +1074,17 @@ namespace Redline.EditorTools
             AssetDatabase.CreateAsset(profile, profilePath);
 
             Bloom bloom = profile.Add<Bloom>(true);
-            bloom.threshold.Override(0.85f);
-            bloom.intensity.Override(1.8f);
-            bloom.scatter.Override(0.7f);
+            bloom.threshold.Override(1.60f);
+            bloom.intensity.Override(0.18f);
+            bloom.scatter.Override(0.25f);
 
             Vignette vignette = profile.Add<Vignette>(true);
-            vignette.intensity.Override(0.35f);
+            vignette.intensity.Override(0.30f);
             vignette.smoothness.Override(0.45f);
 
             ColorAdjustments colorAdjust = profile.Add<ColorAdjustments>(true);
-            colorAdjust.contrast.Override(28f);
-            colorAdjust.postExposure.Override(0.2f);
+            colorAdjust.contrast.Override(10f);
+            colorAdjust.postExposure.Override(0.0f);
 
             volume.profile = profile;
             EditorUtility.SetDirty(profile);

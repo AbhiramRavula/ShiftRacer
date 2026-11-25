@@ -10,8 +10,25 @@ namespace Redline.Core
         public float DistanceTraveled { get; private set; }
         public float CurrentSpeedMs { get; private set; }
         public bool IsRacing { get; private set; }
+        public int WinStreak { get; private set; }
+
+        public string RivalTierName => WinStreak >= 4 ? "CHAMPIONSHIP PRO" :
+                                       WinStreak >= 2 ? "SUPERSTOCK 1000" :
+                                       WinStreak == 1 ? "TUNED STREET" : "ROOKIE RIVAL";
 
         public void SetConfig(RaceConfig newConfig) => config = newConfig;
+
+        public void RegisterRaceResult(bool playerWon)
+        {
+            if (playerWon)
+            {
+                WinStreak = Mathf.Min(WinStreak + 1, 5);
+            }
+            else
+            {
+                WinStreak = Mathf.Max(WinStreak - 1, 0);
+            }
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -79,8 +96,10 @@ namespace Redline.Core
                 }
             }
 
-            // Smooth deterministic acceleration to target speed
-            CurrentSpeedMs = Mathf.MoveTowards(CurrentSpeedMs, targetSpeed, accel * deltaTime);
+            // Smooth deterministic acceleration to target speed, scaled by rival tier
+            float tierSpeedMult = 1f + (WinStreak * 0.025f);
+            float tierAccelMult = 1f + (WinStreak * 0.03f);
+            CurrentSpeedMs = Mathf.MoveTowards(CurrentSpeedMs, targetSpeed * tierSpeedMult, accel * tierAccelMult * deltaTime);
             DistanceTraveled += CurrentSpeedMs * deltaTime;
         }
     }

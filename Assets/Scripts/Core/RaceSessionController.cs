@@ -27,16 +27,32 @@ namespace Redline.Core
         public float ElapsedRaceTime { get; private set; }
         public float StagingTimer { get; private set; }
         public bool PlayerWon { get; private set; }
+        public bool GotPerfectLaunch { get; private set; }
+        public bool IsNewPersonalBest { get; private set; }
+        public bool IsFinishingRollout => _isFinishingRollout;
         public string ResultSummary { get; private set; }
         public RaceDistanceMode DistanceMode { get; private set; } = RaceDistanceMode.QuarterMile;
         public float TargetRaceDistance => config != null ? config.GetDistanceForMode(DistanceMode) : 402.336f;
+
+        public const float PerfectLaunchMinRpm = 8000f;
+        public const float PerfectLaunchMaxRpm = 10800f;
 
         public event Action<RaceState> OnStateChanged;
         public event Action<RaceDistanceMode> OnDistanceModeChanged;
 
         private const float StagingDuration = 3.0f;
+        private const float FinishRolloutDuration = 0.55f;
         private bool _initialized;
         private float _readyLockoutTimer;
+        private bool _isFinishingRollout;
+        private float _rolloutTimer;
+        private float _officialFinishTime;
+        private float _officialTrapSpeedKmh;
+        private float _officialPlayerDist;
+        private float _officialOpponentDist;
+
+        public float GetBestTime(RaceDistanceMode mode) => PlayerPrefs.GetFloat($"ShiftRacer_BestTime_{mode}", 0f);
+        public float GetBestSpeed(RaceDistanceMode mode) => PlayerPrefs.GetFloat($"ShiftRacer_BestSpeed_{mode}", 0f);
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -201,12 +217,42 @@ namespace Redline.Core
 
                     if (StagingTimer <= 0f)
                     {
+                        if (playerEngine != null && playerEngine.LaunchRpm >= PerfectLaunchMinRpm && playerEngine.LaunchRpm <= PerfectLaunchMaxRpm)
+                        {
+                            GotPerfectLaunch = true;
+                            playerEngine.CurrentDriveEfficiency = 1.12f;
+                        }
+                        else
+                        {
+                            GotPerfectLaunch = false;
+                        }
+
                         if (opponent != null) opponent.StartRacing();
                         TransitionTo(RaceState.Racing);
                     }
                     break;
 
                 case RaceState.Racing:
+                    if (_isFinishingRollout)
+                    {
+                        _rolloutTimer -= Time.deltaTime;
+                        if (playerEngine != null)
+                        {
+                            // Cut throttle and coast past the finish gantry
+                            playerEngine.UpdateEngine(false, Time.deltaTime, allowMovement: true);
+                        }
+                        if (opponent != null)
+                        {
+                            opponent.UpdateOpponent(Time.deltaTime, TargetRaceDistance * 1.5f);
+                        }
+                        if (_rolloutTimer <= 0f)
+                        {
+                            _isFinishingRollout = false;
+                            FinishRace(_officialPlayerDist, _officialOpponentDist, _officialFinishTime, _officialTrapSpeedKmh);
+                        }
+                        break;
+                    }
+
                     ElapsedRaceTime += Time.deltaTime;
 
                     // Edge-triggered upshift
@@ -242,7 +288,12 @@ namespace Redline.Core
 
                     if (playerDist >= targetDist || opponentDist >= targetDist)
                     {
-                        FinishRace(playerDist, opponentDist);
+                        _isFinishingRollout = true;
+                        _rolloutTimer = FinishRolloutDuration;
+                        _officialFinishTime = ElapsedRaceTime;
+                        _officialTrapSpeedKmh = playerEngine != null ? playerEngine.CurrentSpeedKmh : 0f;
+                        _officialPlayerDist = playerDist;
+                        _officialOpponentDist = opponentDist;
                     }
                     break;
 
@@ -264,6 +315,9 @@ namespace Redline.Core
         {
             ElapsedRaceTime = 0f;
             PlayerWon = false;
+            GotPerfectLaunch = false;
+            IsNewPersonalBest = false;
+            _isFinishingRollout = false;
             ResultSummary = "";
             _readyLockoutTimer = 0.45f; // Debounce lockout so tapping Result screen returns to menu without replaying
 
@@ -299,6 +353,9 @@ namespace Redline.Core
             StagingTimer = StagingDuration;
             ElapsedRaceTime = 0f;
             PlayerWon = false;
+            GotPerfectLaunch = false;
+            IsNewPersonalBest = false;
+            _isFinishingRollout = false;
             ResultSummary = "";
 
             if (playerEngine != null) playerEngine.Initialize();
@@ -308,37 +365,65 @@ namespace Redline.Core
             TransitionTo(RaceState.Staging);
         }
 
-        private void FinishRace(float playerDist, float opponentDist)
+        private void FinishRace(float playerDist, float opponentDist, float officialTime, float trapSpeedKmh)
         {
             if (opponent != null) opponent.StopRacing();
 
             bool crossedFirst = playerDist >= opponentDist;
-            bool fiveCleanShifts = judge != null && judge.CleanShiftsCount >= 5 && judge.IsRunClean;
+            int totalShifts = judge != null ? judge.TotalUpshiftsCompleted : 0;
+            int cleanShifts = judge != null ? judge.CleanShiftsCount : 0;
+            bool flawlessTiming = judge != null && totalShifts > 0 && cleanShifts == totalShifts && judge.IsRunClean;
 
             // A win is a win! Crossing the line first is ALWAYS a victory.
             PlayerWon = crossedFirst;
+            if (opponent != null) opponent.RegisterRaceResult(crossedFirst);
+
+            // Personal Best tracking per distance mode
+            IsNewPersonalBest = false;
+            string timeKey = $"ShiftRacer_BestTime_{DistanceMode}";
+            string speedKey = $"ShiftRacer_BestSpeed_{DistanceMode}";
+            float prevBestTime = PlayerPrefs.GetFloat(timeKey, 0f);
+            float prevBestSpeed = PlayerPrefs.GetFloat(speedKey, 0f);
+
+            if (crossedFirst && (prevBestTime <= 0f || officialTime < prevBestTime))
+            {
+                IsNewPersonalBest = true;
+                PlayerPrefs.SetFloat(timeKey, officialTime);
+                if (trapSpeedKmh > prevBestSpeed) PlayerPrefs.SetFloat(speedKey, trapSpeedKmh);
+                PlayerPrefs.Save();
+            }
+            else if (crossedFirst && trapSpeedKmh > prevBestSpeed)
+            {
+                PlayerPrefs.SetFloat(speedKey, trapSpeedKmh);
+                PlayerPrefs.Save();
+            }
 
             string distLabel = DistanceMode == RaceDistanceMode.QuarterMile ? "1/4 MILE" :
                                DistanceMode == RaceDistanceMode.HalfMile ? "1/2 MILE" : "1 MILE";
 
-            float playerSpeed = playerEngine != null ? playerEngine.CurrentSpeedKmh : 0f;
-            int cleanShifts = judge != null ? judge.CleanShiftsCount : 0;
+            string bestTag = IsNewPersonalBest
+                ? "  •  <color=#FFE600><b>★ NEW BEST! ★</b></color>"
+                : (prevBestTime > 0f ? $"  •  <color=#9AA0A6>BEST {prevBestTime:F2}s</color>" : "");
+
+            string shiftDisplay = totalShifts > 0 ? $"{cleanShifts}/{totalShifts}" : "0/0";
 
             if (crossedFirst)
             {
-                string timingTag = fiveCleanShifts ? "<color=#00FF66><b>FLAWLESS 100% TIMING</b></color>" : "<color=#00F0FF><b>CLEAN RUN</b></color>";
-                ResultSummary = $"<size=88%><color=#9AA0A6>{distLabel} FINISH</color>  •  {timingTag}</size>\n" +
-                                $"<color=#9AA0A6>TIME</color>  <color=#00F0FF><b>{ElapsedRaceTime:F2}s</b></color>      <color=#555566>|</color>      " +
-                                $"<color=#9AA0A6>SPEED</color>  <color=#FFE600><b>{playerSpeed:F0} KM/H</b></color>\n" +
-                                $"<color=#9AA0A6>CLEAN SHIFTS</color>  <color={(fiveCleanShifts ? "#00FF66" : "#FFFFFF")}><b>{cleanShifts}/5</b></color>";
+                string timingTag = flawlessTiming ? "<color=#00FF66><b>FLAWLESS 100% TIMING</b></color>" : "<color=#00F0FF><b>CLEAN RUN</b></color>";
+                ResultSummary = $"<size=86%><color=#9AA0A6>{distLabel} FINISH</color>  •  {timingTag}{bestTag}</size>\n" +
+                                $"<color=#9AA0A6>TIME</color>  <color=#00F0FF><b>{officialTime:F2}s</b></color>      <color=#555566>|</color>      " +
+                                $"<color=#9AA0A6>TRAP</color>  <color=#FFE600><b>{trapSpeedKmh:F0} KM/H</b></color>\n" +
+                                $"<color=#9AA0A6>CLEAN SHIFTS</color>  <color={(flawlessTiming ? "#00FF66" : "#FFFFFF")}><b>{shiftDisplay}</b></color>" +
+                                (opponent != null ? $"      <color=#555566>|</color>      <color=#9AA0A6>NEXT RIVAL:</color> <color=#FFFFFF><b>{opponent.RivalTierName}</b></color>" : "");
             }
             else
             {
                 float rivalLead = Mathf.Max(0.5f, opponentDist - playerDist);
-                ResultSummary = $"<size=88%><color=#FF6666>{distLabel} RUN</color>  •  <color=#9AA0A6>RIVAL LEAD +{rivalLead:F1} m</color></size>\n" +
-                                $"<color=#9AA0A6>TIME</color>  <color=#00F0FF><b>{ElapsedRaceTime:F2}s</b></color>      <color=#555566>|</color>      " +
-                                $"<color=#9AA0A6>SPEED</color>  <color=#FFE600><b>{playerSpeed:F0} KM/H</b></color>\n" +
-                                $"<color=#9AA0A6>CLEAN SHIFTS</color>  <color=#FFFFFF><b>{cleanShifts}/5</b></color>";
+                ResultSummary = $"<size=86%><color=#FF6666>{distLabel} RUN</color>  •  <color=#9AA0A6>RIVAL LEAD +{rivalLead:F1} m</color>{bestTag}</size>\n" +
+                                $"<color=#9AA0A6>TIME</color>  <color=#00F0FF><b>{officialTime:F2}s</b></color>      <color=#555566>|</color>      " +
+                                $"<color=#9AA0A6>TRAP</color>  <color=#FFE600><b>{trapSpeedKmh:F0} KM/H</b></color>\n" +
+                                $"<color=#9AA0A6>CLEAN SHIFTS</color>  <color=#FFFFFF><b>{shiftDisplay}</b></color>" +
+                                (opponent != null ? $"      <color=#555566>|</color>      <color=#9AA0A6>RIVAL:</color> <color=#FFFFFF><b>{opponent.RivalTierName}</b></color>" : "");
             }
 
             TransitionTo(RaceState.Result);

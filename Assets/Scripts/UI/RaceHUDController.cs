@@ -99,6 +99,8 @@ namespace Redline.UI
         private Coroutine _badgePopCoroutine;
         private bool _wasPromptingShift;
         private OnScreenTouchButton _upshiftTouchBtn;
+        private GameObject _throttleTouchGo;
+        private TextMeshProUGUI _muteButtonText;
         private int _lastDisplayedCountdown = -1;
 
 #if UNITY_EDITOR
@@ -231,6 +233,7 @@ namespace Redline.UI
             EnsureMobileTouchControls();
             EnsureDistanceSelectorUI();
             EnsureOverlayTouchTriggers();
+            EnsureMuteToggleUI();
             ApplyCleanUILayout();
         }
 
@@ -818,9 +821,25 @@ namespace Redline.UI
             if (session == null) return;
             RaceDistanceMode current = session.DistanceMode;
 
+            UpdateDistanceTabLabel(btnQuarterMile, "1/4 MILE", "402M", session.GetBestTime(RaceDistanceMode.QuarterMile));
+            UpdateDistanceTabLabel(btnHalfMile, "1/2 MILE", "805M", session.GetBestTime(RaceDistanceMode.HalfMile));
+            UpdateDistanceTabLabel(btnFullMile, "1 MILE", "1609M", session.GetBestTime(RaceDistanceMode.FullMile));
+
             StyleDistanceTab(btnQuarterMile, current == RaceDistanceMode.QuarterMile);
             StyleDistanceTab(btnHalfMile, current == RaceDistanceMode.HalfMile);
             StyleDistanceTab(btnFullMile, current == RaceDistanceMode.FullMile);
+        }
+
+        private void UpdateDistanceTabLabel(Button btn, string title, string meters, float bestTime)
+        {
+            if (btn == null) return;
+            var txt = btn.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt == null) return;
+
+            if (bestTime > 0f)
+                txt.text = $"<b>{title}</b>\n<size=60%>{meters} • <color=#00F0FF>BEST {bestTime:F2}s</color></size>";
+            else
+                txt.text = $"<b>{title}</b>\n<size=65%>{meters}</size>";
         }
 
         private void StyleDistanceTab(Button btn, bool isSelected)
@@ -978,6 +997,79 @@ namespace Redline.UI
             }
         }
 
+        private void EnsureMuteToggleUI()
+        {
+            Transform existing = transform.Find("Mute_Toggle_Button");
+            if (existing == null)
+            {
+                GameObject muteGo = new GameObject("Mute_Toggle_Button", typeof(RectTransform), typeof(Image), typeof(Button));
+                muteGo.transform.SetParent(transform, false);
+
+                RectTransform rt = muteGo.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(1f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(1f, 1f);
+                rt.anchoredPosition = new Vector2(-24f, -20f);
+                rt.sizeDelta = new Vector2(118f, 36f);
+
+                Image img = muteGo.GetComponent<Image>();
+                if (pillBarSprite != null)
+                {
+                    img.sprite = pillBarSprite;
+                    img.type = Image.Type.Sliced;
+                }
+                img.color = new Color(0.08f, 0.10f, 0.15f, 0.88f);
+                img.raycastTarget = true;
+
+                GameObject txtGo = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+                txtGo.transform.SetParent(muteGo.transform, false);
+                RectTransform trt = txtGo.GetComponent<RectTransform>();
+                trt.anchorMin = Vector2.zero;
+                trt.anchorMax = Vector2.one;
+                trt.offsetMin = Vector2.zero;
+                trt.offsetMax = Vector2.zero;
+
+                _muteButtonText = txtGo.GetComponent<TextMeshProUGUI>();
+                _muteButtonText.fontSize = 15f;
+                _muteButtonText.fontStyle = FontStyles.Bold;
+                _muteButtonText.alignment = TextAlignmentOptions.Center;
+                _muteButtonText.raycastTarget = false;
+
+                var btn = muteGo.GetComponent<Button>();
+                btn.navigation = new Navigation { mode = Navigation.Mode.None };
+                btn.onClick.AddListener(ToggleMuteAudio);
+            }
+            else
+            {
+                _muteButtonText = existing.GetComponentInChildren<TextMeshProUGUI>();
+                var btn = existing.GetComponent<Button>();
+                if (btn != null)
+                {
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(ToggleMuteAudio);
+                }
+            }
+
+            RefreshMuteLabel();
+        }
+
+        private void ToggleMuteAudio()
+        {
+            if (audioController != null)
+            {
+                audioController.ToggleMute();
+                RefreshMuteLabel();
+            }
+        }
+
+        private void RefreshMuteLabel()
+        {
+            if (_muteButtonText == null) return;
+            bool muted = audioController != null && audioController.IsMuted;
+            _muteButtonText.text = muted ? "SFX: OFF" : "SFX: ON";
+            _muteButtonText.color = muted ? new Color(1f, 0.35f, 0.35f) : new Color(0f, 0.95f, 1f);
+        }
+
         private void OnDestroy()
         {
             if (judge != null) judge.OnShiftGraded -= HandleShiftGraded;
@@ -1016,6 +1108,11 @@ namespace Redline.UI
 
         private void Update()
         {
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.mKey.wasPressedThisFrame)
+            {
+                ToggleMuteAudio();
+            }
+
             if (engine == null || config == null) return;
 
             // Live RPM meter updates during both Staging (revving on line) and Racing
@@ -1036,29 +1133,60 @@ namespace Redline.UI
             if (gearText != null) gearText.text = $"{engine.CurrentGear}";
 
             // REAL-TIME SHIFT PROMPT: Lights up when entering green window (11,400–12,600 RPM) or redline!
-            // In 6th (top) gear, there are no more gears to shift into, so we never prompt to shift!
+            // In 6th (top) gear or during finish rollout, there are no more gears to shift into, so we never prompt to shift!
             int maxGears = (config != null && config.gearTopSpeedsKmh != null) ? config.gearTopSpeedsKmh.Length : 6;
             bool canUpshift = engine.CurrentGear < maxGears;
+            bool isRacingActive = session != null && session.State == RaceState.Racing && !session.IsFinishingRollout;
+            bool isStaging = session != null && session.State == RaceState.Staging;
             bool inGreenWindow = engine.CurrentRpm >= config.perfectWindowMin && engine.CurrentRpm <= config.perfectWindowMax;
             bool atRedline = engine.CurrentRpm > config.perfectWindowMax || engine.IsOnLimiter;
-            bool shouldPromptShift = canUpshift && (session != null && session.State == RaceState.Racing) && (inGreenWindow || atRedline);
+            bool shouldPromptShift = canUpshift && isRacingActive && (inGreenWindow || atRedline);
 
             if (limiterWarningCue != null)
             {
-                limiterWarningCue.SetActive(shouldPromptShift);
-
-                var cueText = limiterWarningCue.GetComponent<TextMeshProUGUI>();
-                if (cueText != null)
+                if (isStaging)
                 {
-                    if (inGreenWindow)
+                    limiterWarningCue.SetActive(true);
+                    var cueRt = limiterWarningCue.GetComponent<RectTransform>();
+                    if (cueRt != null)
                     {
-                        cueText.text = ">> SHIFT NOW! <<";
-                        cueText.color = new Color(0f, 0.95f, 1f); // Glowing Cyan
+                        cueRt.anchoredPosition = new Vector2(0f, 185f);
+                        cueRt.sizeDelta = new Vector2(650f, 45f);
                     }
-                    else if (atRedline)
+                    var cueText = limiterWarningCue.GetComponent<TextMeshProUGUI>();
+                    if (cueText != null)
                     {
-                        cueText.text = "!! REDLINE - SHIFT !!";
-                        cueText.color = new Color(1f, 0.2f, 0.2f); // Flashing Red
+                        bool inLaunchZone = engine.CurrentRpm >= RaceSessionController.PerfectLaunchMinRpm &&
+                                            engine.CurrentRpm <= RaceSessionController.PerfectLaunchMaxRpm;
+                        cueText.fontSize = 26f;
+                        cueText.text = inLaunchZone ? "★ LAUNCH ZONE READY! ★" : "REV 8K–10.8K RPM FOR HOLE-SHOT";
+                        cueText.color = inLaunchZone ? new Color(0f, 1f, 0.45f) : new Color(1f, 0.78f, 0.2f);
+                    }
+                }
+                else
+                {
+                    limiterWarningCue.SetActive(shouldPromptShift);
+                    var cueRt = limiterWarningCue.GetComponent<RectTransform>();
+                    if (cueRt != null)
+                    {
+                        cueRt.anchoredPosition = new Vector2(0f, 125f);
+                        cueRt.sizeDelta = new Vector2(520f, 60f);
+                    }
+
+                    var cueText = limiterWarningCue.GetComponent<TextMeshProUGUI>();
+                    if (cueText != null)
+                    {
+                        cueText.fontSize = 44f;
+                        if (inGreenWindow)
+                        {
+                            cueText.text = ">> SHIFT NOW! <<";
+                            cueText.color = new Color(0f, 0.95f, 1f); // Glowing Cyan
+                        }
+                        else if (atRedline)
+                        {
+                            cueText.text = "!! REDLINE - SHIFT !!";
+                            cueText.color = new Color(1f, 0.2f, 0.2f); // Flashing Red
+                        }
                     }
                 }
             }
@@ -1156,6 +1284,21 @@ namespace Redline.UI
             }
         }
 
+        private IEnumerator ShowLaunchCalloutRoutine()
+        {
+            if (shiftGradeCallout != null)
+            {
+                shiftGradeCallout.gameObject.SetActive(true);
+                shiftGradeCallout.text = "★ HOLE-SHOT LAUNCH! ★";
+                shiftGradeCallout.color = new Color(1f, 0.85f, 0.1f);
+            }
+
+            yield return new WaitForSeconds(0.8f);
+
+            if (shiftGradeCallout != null) shiftGradeCallout.gameObject.SetActive(false);
+            _calloutCoroutine = null;
+        }
+
         private IEnumerator ShowCalloutRoutine(ShiftGrade grade)
         {
             if (shiftGradeCallout != null)
@@ -1204,8 +1347,14 @@ namespace Redline.UI
         {
             Debug.Log($"[Redline HUD] State changed to {newState}");
 
+            if (_throttleTouchGo == null && mobileControlsRoot != null)
+                _throttleTouchGo = mobileControlsRoot.transform.Find("Touch_Throttle_Button")?.gameObject;
+
+            bool autoThrottle = config == null || config.autoThrottleDuringRace;
+
             if (newState == RaceState.Ready)
             {
+                if (_throttleTouchGo != null) _throttleTouchGo.SetActive(!autoThrottle);
                 UpdateOverlays(RaceState.Ready);
                 ShowReadyScreen();
 
@@ -1219,6 +1368,8 @@ namespace Redline.UI
             }
             else if (newState == RaceState.Staging)
             {
+                // Allow revving on the staging line with the touch throttle button
+                if (_throttleTouchGo != null) _throttleTouchGo.SetActive(true);
                 _lastDisplayedCountdown = -1;
                 ResetShiftDots();
                 if (shiftGradeCallout != null) shiftGradeCallout.gameObject.SetActive(false);
@@ -1227,10 +1378,19 @@ namespace Redline.UI
             }
             else if (newState == RaceState.Racing)
             {
+                // Pure one-button SHIFT focus during auto-throttle race
+                if (_throttleTouchGo != null) _throttleTouchGo.SetActive(!autoThrottle);
+
                 // Initial launch pop for the shift button
                 if (_upshiftTouchBtn == null && mobileControlsRoot != null)
                     _upshiftTouchBtn = mobileControlsRoot.transform.Find("Touch_Upshift_Button")?.GetComponent<OnScreenTouchButton>();
                 _upshiftTouchBtn?.PlayPopAnimation(1.28f, 0.40f);
+
+                if (session != null && session.GotPerfectLaunch && shiftGradeCallout != null)
+                {
+                    if (_calloutCoroutine != null) StopCoroutine(_calloutCoroutine);
+                    _calloutCoroutine = StartCoroutine(ShowLaunchCalloutRoutine());
+                }
 
                 // Flash "GO!" before hiding staging overlay
                 if (stagingOverlay != null && stagingCountdownText != null)

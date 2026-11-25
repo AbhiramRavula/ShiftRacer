@@ -45,6 +45,7 @@ namespace Redline.Audio
         private float _stateVolumeMultiplier = 0.5f;
         private float _limiterSfxTimer = 0f;
 
+        public bool IsMuted => isMuted;
         public void SetConfig(RaceConfig newConfig) => config = newConfig;
 
 #if UNITY_EDITOR
@@ -170,6 +171,10 @@ namespace Redline.Audio
                 if (session.State == RaceState.Ready)
                 {
                     targetStateVolume = 0.50f;
+                }
+                else if (session.State == RaceState.Racing && session.IsFinishingRollout)
+                {
+                    targetStateVolume = 0.25f; // Throttle cut coast-down past finish line
                 }
                 else if (session.State == RaceState.Result)
                 {

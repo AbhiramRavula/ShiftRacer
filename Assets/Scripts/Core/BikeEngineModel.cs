@@ -13,6 +13,7 @@ namespace Redline.Core
         public int CurrentGear { get; private set; } = 1;
         public bool IsOnLimiter { get; private set; }
         public float CurrentDriveEfficiency { get; set; } = 1.0f;
+        public float LaunchRpm => _clutchSlipRpm;
 
         private float _limiterTimer;
         private float _clutchSlipRpm;

@@ -51,6 +51,8 @@ namespace Redline.EditorTools
 
         private static void UpdateUILayoutInScene()
         {
+            Redline.Core.RacerVisualSync.TuneTrackBloomAndLighting();
+
             var hud = Object.FindAnyObjectByType<RaceHUDController>();
             if (hud != null)
             {
